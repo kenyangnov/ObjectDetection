@@ -1,0 +1,8 @@
+tool/train.py:
+args
+cfg
+cudnn_benchmark¡¢work_dir¡¢resume_from¡¢gpus
+logger
+set_random_seed
+model = buile_detector(cfg.model)
+train_detector
