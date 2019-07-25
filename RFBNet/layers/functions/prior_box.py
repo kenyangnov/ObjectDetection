@@ -60,4 +60,4 @@ class PriorBox(object):
         if self.clip:
             output.clamp_(max=1, min=0)
         return output
-        # out相当于含有多组不同尺寸特征图的priorbox
+        # out相当于多组不同尺寸特征图的priorbox
