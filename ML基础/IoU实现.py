@@ -13,8 +13,8 @@ def get_IoU(pred_bbox, gt_bbox):
     iymin = max(pred_bbox[1], gt_bbox[1])
     ixmax = min(pred_bbox[2], gt_bbox[2])
     iymax = min(pred_bbox[3], gt_bbox[3])
-    iw = np.maxinum(ixmax - ixmax + 1., 0.)
-    ih = np.maximum(iymax - iymax + 1., 0.)
+    iw = np.maxinum(ixmax - ixmin + 1., 0.)	#因为是像素点的坐标，所以要加上1
+    ih = np.maximum(iymax - iymin + 1., 0.)
     #求交集
     inter = iw * ih
     #求并集
