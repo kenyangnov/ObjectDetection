@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 import copy
 
+#注：没有BN层
 
 # ------------------------------- network
 
@@ -196,7 +197,7 @@ class DenseBox(torch.nn.Module):
                                          conv3_4_X.size(3)),
                                    mode='bilinear',
                                    align_corners=True)(conv4_4_X)
-
+                                   
         # feature fusion: concatenate along channel axis
         fusion = torch.cat((conv4_4_X_us, conv3_4_X), dim=1)
         # print('=> fusion shape', fusion.shape)
