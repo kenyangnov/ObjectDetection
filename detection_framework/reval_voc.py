@@ -13,7 +13,7 @@
 
 import os, sys, argparse
 import numpy as np
-import cPickle
+import pickle as cPickle
 
 from voc_eval import voc_eval
 
@@ -22,57 +22,42 @@ def parse_args():
     Parse input arguments
     """
     parser = argparse.ArgumentParser(description='Re-evaluate results')
-    parser.add_argument('output_dir', nargs=1, help='results directory',
+    parser.add_argument('--output_dir', default='result/' ,help='results directory', 
                         type=str)
-    parser.add_argument('--voc_dir', dest='voc_dir', default='data/VOCdevkit-small', type=str)
-    parser.add_argument('--year', dest='year', default='2017', type=str)
-    parser.add_argument('--image_set', dest='image_set', default='test', type=str)
-
-    parser.add_argument('--classes', dest='class_file', default='data/voc.names', type=str)
-
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
+    parser.add_argument('--data_dir', dest='data_dir', default='/media/wl/000675B10007A33A/DatasetRepo/uavsummer/', type=str)
+ 
+    parser.add_argument('--image_set', dest='image_set', default='uavindex', type=str)
 
     args = parser.parse_args()
     return args
 
-def get_voc_results_file_template(image_set, out_dir = ''):
-    filename = 'up-and-down.txt'
-    path = os.path.join(out_dir, filename)
-    return path
 
-def do_python_eval(devkit_path, year, image_set, classes, output_dir = 'results-pr/ceshi'):
-    annopath = os.path.join(
-        devkit_path,
-        'VOC' + year,
-        'Annotations',
-        '{:s}.xml')
-    imagesetfile = os.path.join(
-        devkit_path,
-        'VOC' + year,
-        'ImageSets',
-        'Main',
-        image_set + '.txt')
-    cachedir = os.path.join(devkit_path, 'annotations_cache')
+def do_python_eval(data_path, image_set, classes, output_dir = 'result/'):
+    annopath = os.path.join(data_path, 'Annotations','{:s}.xml')
+    imagesetfile = os.path.join(data_path, image_set + '.txt')
+    cachedir = os.path.join('cache')
+    detpath = 'result/uav_result.txt'
     aps = []
-    # The PASCAL VOC metric changed in 2010
+    # VOC评估指标在2010年发生更改
+    year = 2010  #设定遵循哪一年的规则
     use_07_metric = True if int(year) < 2010 else False
-    print 'VOC07 metric? ' + ('Yes' if use_07_metric else 'No')
+    print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
-    for i, cls in enumerate(classes):
+    for i, cls in enumerate(classes):   #其实只有一类：uav
         if cls == '__background__':
             continue
-        filename = get_voc_results_file_template(image_set).format(cls)
         rec, prec, ap = voc_eval(
-            filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
+            detpath, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
             use_07_metric=use_07_metric)
         aps += [ap]
         print('AP for {} = {:.4f}'.format(cls, ap))
-        with open(os.path.join(output_dir, cls + '_pr.pkl'), 'w') as f:
+        #将单类的评估结果写入对应的pkl文件，格式为[rec, prec, ap]
+        with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
             cPickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
-    print('Mean AP = {:.4f}'.format(np.mean(aps)))
+            print('将该类的评估结果写入文件：{}_pr.pkl'.format(cls))
+    #
+    print('所有类别的Mean AP = {:.4f}'.format(np.mean(aps)))
     print('~~~~~~~~')
     print('Results:')
     for ap in aps:
@@ -91,11 +76,8 @@ def do_python_eval(devkit_path, year, image_set, classes, output_dir = 'results-
 if __name__ == '__main__':
     args = parse_args()
 
-    output_dir = os.path.abspath(args.output_dir[0])
-    with open(args.class_file, 'r') as f:
-        lines = f.readlines()
+    #类名列表
+    classes = ['uav']
 
-    classes = [t.strip('\n') for t in lines]
-
-    print 'Evaluating detections'
-    do_python_eval(args.voc_dir, args.year, args.image_set, classes, output_dir)
+    print("开始检测")
+    do_python_eval(args.data_dir, args.image_set, classes)

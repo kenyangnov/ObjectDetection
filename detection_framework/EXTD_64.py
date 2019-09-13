@@ -191,6 +191,7 @@ class EXTD(nn.Module):
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
 
+        # test阶段，输出结果要进行NMS
         if self.phase == 'test':
             output = self.detect(
                 loc.view(loc.size(0), -1, 4),  # loc preds
@@ -198,7 +199,8 @@ class EXTD(nn.Module):
                                        self.num_classes)),  # conf preds
                 self.priors.type(type(x.data))  # default boxes
             )
-
+        
+        #训练阶段直接给出运行结果
         else:
             output = (
                 loc.view(loc.size(0), -1, 4),
