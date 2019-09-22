@@ -170,35 +170,35 @@ class Net(nn.Module): #mobileNet v2
             # t, c, n, s    (隐层扩张倍数,输出通道数,重复次数,步长)
             [1, 64, 1, 1],  # depthwise conv for first row
             [2, 64, 2, 1],
-            [4, 64, 2, 2],  #base[3] base[4]
-            [2, 64, 2, 1],  #base[5] base[6]
+            [4, 64, 2, 2],  #base[3]的stride=1, base[4]的stride=2
+            [2, 64, 2, 1],  #base[5] 
             [4, 64, 5, 1],
             [2, 64, 2, 2],
             [2, 64, 6, 2],
         ]
 
-        # building first layer
+        # self.features 记录网络结构
+        # 构建第一层
         input_channel = int(input_channel * width_mult) #64
         self.last_channel = int(last_channel * width_mult) if width_mult > 1.0 else last_channel    #256
         self.features = [conv_bn(3, input_channel, 2)]  #[3,64,2]
-
-        # building inverted residual
+        # 构建中间层IR块
         cnt = 0
         for t, c, n, s in interverted_residual_setting:
             output_channel = int(c * width_mult)    #64
             for i in range(n):
-                if i == n - 1:  # 如果需要减半，那只在最后一个IR块将特征图减半
+                if i == n - 1:  # 如果尺寸需要减半，那只在最后一个IR块将特征图减半
                     self.features.append(block_dwc(input_channel, output_channel, s, expand_ratio=t))
                 else:
                     self.features.append(block_dwc(input_channel, output_channel, 1, expand_ratio=t))
                 input_channel = output_channel
             cnt+=1
-
-        # building last several layers
+        # 构建最后一层
         self.features.append(gated_conv1x1(input_channel, self.last_channel))
-
-        # make it nn.Sequential
+        
+        # 将self.features从List转换为网络模块
         self.features_sequential = nn.Sequential(*self.features)
+        
         # Global depthwise conv
         #self.GDCconv = DWC(self.last_channel, embedding_size)
 

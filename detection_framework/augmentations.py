@@ -128,7 +128,7 @@ def distort_image(img):
         img = random_contrast(img)
     return img
 
-
+# 判断采样的bbox是否在原始bbox的内部
 def meet_emit_constraint(src_bbox, sample_bbox):
     center_x = (src_bbox.xmax + src_bbox.xmin) / 2
     center_y = (src_bbox.ymax + src_bbox.ymin) / 2
@@ -777,16 +777,16 @@ def anchor_crop_image_sampling(img,
         return image, sampled_labels
 
 
-def preprocess(img, bbox_labels, mode, image_path):
+def preprocess(img, bbox_labels, mode):
     img_width, img_height = img.size
     sampled_labels = bbox_labels
     if mode == 'train':
-        if cfg.apply_distort:
+        if cfg.apply_distort:   #扭曲图像
             img = distort_image(img)
-        if cfg.apply_expand:
+        if cfg.apply_expand:    #扩张图片
             img, bbox_labels, img_width, img_height = expand_image(
                 img, bbox_labels, img_width, img_height)
-
+        
         batch_sampler = []
         prob = np.random.uniform(0., 1.)
         if prob > cfg.data_anchor_sampling_prob and cfg.anchor_sampling:
@@ -810,6 +810,8 @@ def preprocess(img, bbox_labels, mode, image_path):
             '''
             img = img.astype('uint8')
             img = Image.fromarray(img)
+            #print(img.size)
+            #img.show()
         else:
             batch_sampler.append(sampler(1, 50, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
                                          0.0, True))
@@ -832,32 +834,34 @@ def preprocess(img, bbox_labels, mode, image_path):
                     cfg.resize_width, cfg.resize_height, cfg.min_face_size)
 
             img = Image.fromarray(img)
-
+            #print(img.size)
+            #img.show()
+    #将图片调整到指定大小
     interp_mode = [
         Image.BILINEAR, Image.HAMMING, Image.NEAREST, Image.BICUBIC,
         Image.LANCZOS
     ]
     interp_indx = np.random.randint(0, 5)
-
     img = img.resize((cfg.resize_width, cfg.resize_height),
                      resample=interp_mode[interp_indx])
-
+    #img.show()
+    #将图片转换为三维array[h,w,rgb]
     img = np.array(img)
-
+    
     if mode == 'train':
         mirror = int(np.random.uniform(0, 2))
         if mirror == 1:
-            img = img[:, ::-1, :]
+            img = img[:, ::-1, :]   #将图片镜像翻转
             for i in six.moves.xrange(len(sampled_labels)):
                 tmp = sampled_labels[i][1]
                 sampled_labels[i][1] = 1 - sampled_labels[i][3]
                 sampled_labels[i][3] = 1 - tmp
-
+    
     #img = Image.fromarray(img)
-    img = to_chw_bgr(img)
+    img = to_chw_bgr(img) # to CHW and BGR
     img = img.astype('float32')
     img -= cfg.img_mean
     img = img[[2, 1, 0], :, :]  # to RGB
     #img = img * cfg.scale
-
+    
     return img, sampled_labels

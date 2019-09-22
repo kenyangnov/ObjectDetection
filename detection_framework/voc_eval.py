@@ -9,16 +9,15 @@ import os
 import pickle as cPickle
 import numpy as np
 
-#解析XML文件
 def parse_rec(filename):
     """ Parse a PASCAL VOC xml file """
     tree = ET.parse(filename)
     objects = []
     for obj in tree.findall('object'):
         obj_struct = {}
+        obj_struct['name'] = obj.find('name').text
         #obj_struct['pose'] = obj.find('pose').text
         #obj_struct['truncated'] = int(obj.find('truncated').text)
-        obj_struct['name'] = obj.find('name').text
         obj_struct['difficult'] = int(obj.find('difficult').text)
         bbox = obj.find('bndbox')
         obj_struct['bbox'] = [int(bbox.find('xmin').text),
@@ -26,15 +25,16 @@ def parse_rec(filename):
                               int(bbox.find('xmax').text),
                               int(bbox.find('ymax').text)]
         objects.append(obj_struct)
+
     return objects
 
-#求ap值，voc_eval函数调用它
 def voc_ap(rec, prec, use_07_metric=False):
     """ ap = voc_ap(rec, prec, [use_07_metric])
     Compute VOC AP given precision and recall.
     If use_07_metric is true, uses the
     VOC 07 11 point method (default:False).
     """
+    # use_07_metric = False
     if use_07_metric:
         # 11 point metric
         ap = 0.
@@ -62,8 +62,6 @@ def voc_ap(rec, prec, use_07_metric=False):
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
 
-
-#对单类检测结果进行评估
 def voc_eval(detpath,
              annopath,
              imagesetfile,
@@ -80,45 +78,49 @@ def voc_eval(detpath,
 
     Top level function that does the PASCAL VOC evaluation.
 
-    detpath: 检测结果文件（txt格式）
-    annopath: anno的路径（xml格式）
-    imagesetfile: 图片名/图片id文件（txt格式）
-    classname: 类名
-    cachedir: anno的缓存文件（pkl格式）
-    [ovthresh]: Overlap阈值设定，默认为0.5 (default = 0.5)
-    [use_07_metric]: 是否使用VOC2007评估方式？(11 point AP computation，default False)
+    detpath: Path to detections
+        detpath.format(classname) should produce the detection results file.
+    annopath: Path to annotations
+        annopath.format(imagename) should be the xml annotations file.
+    imagesetfile: Text file containing the list of images, one image per line.
+    classname: Category name (duh)
+    cachedir: Directory for caching the annotations
+    [ovthresh]: Overlap threshold (default = 0.5)
+    [use_07_metric]: Whether to use VOC07's 11 point AP computation
+        (default False)
     """
     # assumes detections are in detpath.format(classname)
     # assumes annotations are in annopath.format(imagename)
     # assumes imagesetfile is a text file with each line an image name
     # cachedir caches the annotations in a pickle file
 
-    # 首先加载GT
+    # first load gt
     if not os.path.isdir(cachedir):
         os.mkdir(cachedir)
     cachefile = os.path.join(cachedir, 'anno.pkl')
-    # 读取imageset中保存的图片名/图片id
+    # read list of images
     with open(imagesetfile, 'r') as f:
         lines = f.readlines()
     imagenames = [x.strip() for x in lines]
 
     if not os.path.isfile(cachefile):
-        # 如果没有GT缓存的pkl文件，则解析xml文件并生成缓存
+        # load annots
         recs = {}
         for i, imagename in enumerate(imagenames):
             recs[imagename] = parse_rec(annopath.format(imagename))
             if i % 100 == 0:
                 print('Reading annotation for {:d}/{:d}'.format(
                     i + 1, len(imagenames)))
-        print('将GT的anno缓存保存到 {:s}。'.format(cachefile))
+        # save
+        print('将GT的anno缓存保存到 {:s}'.format(cachefile))
         with open(cachefile, 'wb') as f:
             cPickle.dump(recs, f)
     else:
-        # 如果有GT缓存的pkl文件，则直接加载到recs中
+        # load
         with open(cachefile, 'rb') as f:
             recs = cPickle.load(f)
 
-    # 提取每个类的GT（当前只有一个类别：uav）
+    # extract gt objects for this class
     class_recs = {}
     npos = 0
     for imagename in imagenames:
@@ -131,8 +133,9 @@ def voc_eval(detpath,
                                  'difficult': difficult,
                                  'det': det}
 
-    # 读取检测结果并解析
-    with open(detpath, 'r') as f:
+    # read dets
+    detfile = detpath.format(classname)
+    with open(detfile, 'r') as f:
         lines = f.readlines()
 
     splitlines = [x.strip().split(' ') for x in lines]
@@ -140,7 +143,7 @@ def voc_eval(detpath,
     confidence = np.array([float(x[1]) for x in splitlines])
     BB = np.array([[float(z) for z in x[2:]] for x in splitlines])
 
-    # 根据置信度排序
+    # sort by confidence
     sorted_ind = np.argsort(-confidence)
     sorted_scores = np.sort(-confidence)
     BB = BB[sorted_ind, :]
@@ -150,11 +153,11 @@ def voc_eval(detpath,
     nd = len(image_ids)
     tp = np.zeros(nd)
     fp = np.zeros(nd)
-    for d in range(nd): #每张图片都要计算
-        R = class_recs[image_ids[d]]    #GT
+    for d in range(nd):
+        R = class_recs[image_ids[d]]
         bb = BB[d, :].astype(float)
         ovmax = -np.inf
-        BBGT = R['bbox'].astype(float)  #GT bbox
+        BBGT = R['bbox'].astype(float)
 
         if BBGT.size > 0:
             # compute overlaps
@@ -186,7 +189,6 @@ def voc_eval(detpath,
         else:
             fp[d] = 1.
 
-    #计算精度和召回率
     # compute precision recall
     fp = np.cumsum(fp)
     tp = np.cumsum(tp)

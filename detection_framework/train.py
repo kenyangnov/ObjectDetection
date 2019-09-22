@@ -28,6 +28,7 @@ def str2bool(v):
 # argparse：解析args
 parser = argparse.ArgumentParser(
     description='EXTD face Detector Training With Pytorch')
+train_set = parser.add_mutually_exclusive_group()
 parser.add_argument('--dataset',
                     default='voc',
                     choices=['voc'],
@@ -60,14 +61,18 @@ parser.add_argument('--weight_decay',
 parser.add_argument('--gamma',
                     default=0.1, type=float,
                     help='Gamma update for SGD')
+parser.add_argument('--multigpu',
+                    default=True, type=str2bool,
+                    help='Use mutil Gpu training')
+parser.add_argument('--eval_verbose',
+                    default=True, type=str2bool,
+                    help='Use mutil Gpu training')
 parser.add_argument('--save_folder',
-                    default='./weights/',
+                    default='./weights_new/',
                     help='Directory for saving checkpoint models')
 parser.add_argument('--pretrained', default='./weights/mobileFacenet_maxpool_v5_.pth', type=str, metavar='PATH', help='path to latest checkpoint (default: none)')
 
 args = parser.parse_args()
-
-print('参数设置如下:\n', args)
 
 #计算flops
 def compute_flops(model, image_size):
@@ -95,11 +100,11 @@ if torch.cuda.is_available():
 
 
 if not os.path.exists(args.save_folder):
-    print("创建权重保存目录")
+    print("创建保存目录")
     os.makedirs(args.save_folder)
 
 
-#数据集加载(目前仅支持VOC数据集)
+#数据集加载
 print('加载数据集...')
 train_dataset, val_dataset = dataset_factory(args.dataset)
 train_loader = data.DataLoader(train_dataset, args.batch_size,
@@ -114,12 +119,11 @@ val_loader = data.DataLoader(val_dataset, val_batchsize,
                             collate_fn=detection_collate,
                             pin_memory=True)
 
-#创建网络
+min_loss = np.inf
+
+start_epoch = 0
 extd_net = build_extd('train', cfg.NUM_CLASSES)
 net = extd_net
-if args.cuda:
-    net = net.cuda()
-    cudnn.benckmark = True
 #print(net)
 
 #打印flops
@@ -128,23 +132,23 @@ print('分类模型参数量: %d, flops: %.2f GFLOPS, %.2f MFLOPS, 图片尺寸:
       (sum([p.data.nelement() for p in net.parameters()]), gflops, mflops,cfg.INPUT_SIZE))
 
 
-#初始化权重
+#加载检查点
 if args.resume:
-    #有检查点文件
     print('加载检查点, 加载 {}...'.format(args.resume))
     start_epoch = net.load_weights(args.resume)
 
 else:
-    #无检查点文件
     try:
-        #有预训练主干网络
         _weights = torch.load(args.pretrained)
         print('加载预训练 base network....')
         net.base.load_state_dict(_weights['state_dict'], strict=False)
     except:
-        #无预训练主干网络
         print('初始化 base network....')
         net.base.apply(net.weights_init)
+
+if args.cuda:
+    net = net.cuda()
+    cudnn.benckmark = True
 
 if not args.resume:
     print('初始化权重...')
@@ -153,22 +157,21 @@ if not args.resume:
     extd_net.conf.apply(extd_net.weights_init)
     #s3fd_net.head.apply(s3fd_net.weights_init)
 
-#设置优化器和损失函数
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                       weight_decay=args.weight_decay)
+
+# MultiBoxLoss中已经做了负样本挖掘
 criterion = MultiBoxLoss(cfg, args.dataset, args.cuda)
 
 
-
+print('参数列表:\n')
+print(args)
 
 # tensorboard使用
 tensor_board_dir = os.path.join('./logs', 'tensorboard')
 if not os.path.isdir(tensor_board_dir):
     os.mkdir(tensor_board_dir)
 logger = Logger(tensor_board_dir)
-
-min_loss = np.inf
-start_epoch = 0
 
 def train():
     step_index = 0
@@ -192,6 +195,7 @@ def train():
 
             t0 = time.time()
             out = net(images)
+            
             # backprop
             optimizer.zero_grad()
             loss_l, loss_c = criterion(out, targets)
@@ -221,7 +225,7 @@ def train():
             break
 
 
-# 每一轮epoch训练结束后进行验证
+# 每一轮epoch结束后进行验证
 def val(epoch):
     net.eval()
     loc_loss = 0
@@ -233,9 +237,8 @@ def val(epoch):
         for batch_idx, (images, targets) in enumerate(val_loader):
             if args.cuda:
                 images = Variable(images.cuda())
-
-                targets = [Variable(ann.cuda(), volatile=True)
-                           for ann in targets]
+                with torch.no_grad():
+                    targets = [ann.cuda() for ann in targets]
             else:
                 images = Variable(images)
                 targets = [Variable(ann, volatile=True) for ann in targets]
@@ -247,16 +250,16 @@ def val(epoch):
             conf_loss += loss_c.item()
             step += 1
 
-        tloss = (loc_loss + conf_loss) / step
+        tloss = (loc_loss + 3 * conf_loss) / step
         t2 = time.time()
         print('Timer: %.4f' % (t2 - t1))
         print('test epoch:' + repr(epoch) + ' || Loss:%.4f' % (tloss))
 
         global min_loss
-	    #保存最优结果
+	#保存最优结果
         if tloss < min_loss:
-            print('e当前最优结果为epoch', epoch,'，已保存。')
-            file = 'extd_{}_best.pth'.format(args.dataset)
+            print('保存最优结果,epoch', epoch)
+            file = 'extd_{}.pth'.format(args.dataset)
             torch.save(extd_net.state_dict(), os.path.join(
                 args.save_folder, file))
             min_loss = tloss
@@ -265,14 +268,13 @@ def val(epoch):
             'epoch': epoch,
             'weight': extd_net.state_dict(),
         }
-	    #保存检查点
-        print('保存epoch',epoch,'，检查点。')
+	#保存检查点
+        print('保存检查点,epoch',epoch)
         file = 'extd_{}_checkpoint.pth'.format(args.dataset)
         torch.save(states, os.path.join(
             args.save_folder, file))
 
 
-# 调整学习率
 def adjust_learning_rate(optimizer, gamma, step):
     """Sets the learning rate to the initial LR decayed by 10 at every
         specified step

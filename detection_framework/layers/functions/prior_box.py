@@ -33,6 +33,8 @@ class PriorBox(object):
 
     def forward(self):
         mean = []
+        #生成不同尺寸特征图中不同尺寸的anchors
+        #[[160, 160], [80, 80], [40, 40], [20, 20], [10, 10], [5, 5]]
         for k in range(len(self.feature_maps)):
             feath = self.feature_maps[k][0]
             featw = self.feature_maps[k][1]
@@ -55,7 +57,7 @@ class PriorBox(object):
 
 
 if __name__ == '__main__':
-    from data.config import cfg
-    p = PriorBox([640, 640], cfg)
+    from config import cfg
+    p = PriorBox([640, 640],[[160, 160], [80, 80], [40, 40], [20, 20], [10, 10], [5, 5]], cfg)
     out = p.forward()
     print(out.size())
