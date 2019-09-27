@@ -28,6 +28,12 @@ from vocdataset import VOCDetection, VOCAnnotationTransform
 
 labelmap = ['uav']
 
+#parser设置
+parser = argparse.ArgumentParser(
+    description='EXTD face Detector Testing With Pytorch')
+parser.add_argument('net_version')
+args = parser.parse_args()
+
 class Timer(object):
     """简单的计时器"""
 
@@ -73,7 +79,6 @@ def write_voc_results_file(all_boxes, dataset, filename):
 
 
 def test_net(save_folder, net, dataset, thresh=0.5):
-    
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]
                  for _ in range(len(labelmap) + 1)]
@@ -95,12 +100,11 @@ def test_net(save_folder, net, dataset, thresh=0.5):
         # plt.imshow(img)
         # plt.show()
         h, w, _ = img.shape
-	#缩放可能有点问题
-        #max_im_shrink = np.sqrt(1700 * 1200 / (img.shape[0] * img.shape[1]))
-        #image = cv2.resize(img, None, None, fx=max_im_shrink, fy=max_im_shrink, interpolation=cv2.INTER_LINEAR)
-        
-        #测试时图片的大小
-        image = cv2.resize(img,(1280,1280),interpolation=cv2.INTER_LINEAR)
+
+        #设置输入测试图片的大小
+        max_im_shrink = np.sqrt(1700 * 1200 / (img.shape[0] * img.shape[1]))
+        image = cv2.resize(img, None, None, fx=max_im_shrink, fy=max_im_shrink, interpolation=cv2.INTER_LINEAR)
+        #image = cv2.resize(img,(1280,1280),interpolation=cv2.INTER_LINEAR)
         
         x = to_chw_bgr(image)
         x = x.astype('float32')
@@ -153,20 +157,25 @@ def test_net(save_folder, net, dataset, thresh=0.5):
     write_voc_results_file(all_boxes, dataset ,det_file_txt)
 
 if __name__ == '__main__':
+    #设置网络
     net = build_extd('test', cfg.NUM_CLASSES)
-    net.load_state_dict(torch.load("weights_new/extd_voc.pth"))
+    load_folder = "weights/"+args.net_version+"/extd_voc.pth"
+    print("从{}加载训练文件".format(load_folder))
+    net.load_state_dict(torch.load(load_folder))
     net.eval()
-    
     use_cuda = torch.cuda.is_available()
     if use_cuda:
         net.cuda()
         cudnn.benckmark = True
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     print('模型加载完成')
-
+    #加载数据集
     dataset = VOCDetection("/media/wl/000675B10007A33A/DatasetRepo/uavsummer",
                            target_transform=VOCAnnotationTransform(),
                            mode='test')
     print("数据加载完成")
+    
+    save_folder = 'result/'+args.net_version
+    print("结果保存到{}".format(save_folder))
     #开始检测
-    test_net('result_new/', net, dataset, 0.5)
+    test_net(save_folder, net, dataset, 0.5)

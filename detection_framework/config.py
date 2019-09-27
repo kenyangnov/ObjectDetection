@@ -66,8 +66,9 @@ _C.USE_NMS = True
 # vocdataset config
 _C.VOC = EasyDict()
 _C.VOC.HOME = '/media/wl/000675B10007A33A/DatasetRepo/uavsummer/'
-_C.VOC.TRAIN_FILE = _C.VOC.HOME + 'uav.txt'
-_C.VOC.VAL_FILE = _C.VOC.HOME + 'uav.txt'
+_C.VOC.TRAIN_FILE = _C.VOC.HOME + 'uav_train.txt'
+_C.VOC.VAL_FILE = _C.VOC.HOME + 'uav_val.txt'
+_C.VOC.VAL_FILE = _C.VOC.HOME + 'uav_test.txt'
 _C.VOC.OVERLAP_THRESH = [0.1, 0.35, 0.5]
 
 # other dataset config

@@ -56,7 +56,7 @@ class VOCDetection(data.Dataset):
         self._annopath = osp.join(root, 'Annotations', '%s.xml')
         self._imgpath = osp.join(root, 'JPEGImages', '%s.jpg')
         self.ids = []
-        for line in open(osp.join(root, 'uavindex.txt')):
+        for line in open(osp.join(root, mode+'.txt')):
             self.ids.append(line.strip())
 
     def __getitem__(self, index):

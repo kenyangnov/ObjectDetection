@@ -68,9 +68,12 @@ parser.add_argument('--eval_verbose',
                     default=True, type=str2bool,
                     help='Use mutil Gpu training')
 parser.add_argument('--save_folder',
-                    default='./weights_new/',
+                    default='./weights/{}/',
                     help='Directory for saving checkpoint models')
 parser.add_argument('--pretrained', default='./weights/mobileFacenet_maxpool_v5_.pth', type=str, metavar='PATH', help='path to latest checkpoint (default: none)')
+
+# 设置网络版本，帮助确定文件保存路径
+parser.add_argument('net_version')
 
 args = parser.parse_args()
 
@@ -98,14 +101,15 @@ if torch.cuda.is_available():
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
     print("设置cuda")
 
-
-if not os.path.exists(args.save_folder):
+save_folder = args.save_folder.format(args.net_version)
+if not os.path.exists(save_folder):
     print("创建保存目录")
-    os.makedirs(args.save_folder)
+    os.makedirs(save_folder)
 
 
 #数据集加载
 print('加载数据集...')
+#生成训练集和验证集
 train_dataset, val_dataset = dataset_factory(args.dataset)
 train_loader = data.DataLoader(train_dataset, args.batch_size,
                             num_workers=args.num_workers,
@@ -168,7 +172,7 @@ print('参数列表:\n')
 print(args)
 
 # tensorboard使用
-tensor_board_dir = os.path.join('./logs', 'tensorboard')
+tensor_board_dir = os.path.join('./logs/{}/'.format(args.net_version))
 if not os.path.isdir(tensor_board_dir):
     os.mkdir(tensor_board_dir)
 logger = Logger(tensor_board_dir)
@@ -261,7 +265,7 @@ def val(epoch):
             print('保存最优结果,epoch', epoch)
             file = 'extd_{}.pth'.format(args.dataset)
             torch.save(extd_net.state_dict(), os.path.join(
-                args.save_folder, file))
+                save_folder, file))
             min_loss = tloss
 
         states = {
@@ -272,7 +276,7 @@ def val(epoch):
         print('保存检查点,epoch',epoch)
         file = 'extd_{}_checkpoint.pth'.format(args.dataset)
         torch.save(states, os.path.join(
-            args.save_folder, file))
+            save_folder, file))
 
 
 def adjust_learning_rate(optimizer, gamma, step):
