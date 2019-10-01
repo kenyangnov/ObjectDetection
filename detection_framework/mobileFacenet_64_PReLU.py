@@ -171,7 +171,7 @@ class Net(nn.Module): #mobileNet v2
             [1, 64, 1, 1],  # depthwise conv for first row
             [2, 64, 2, 1],
             [4, 64, 2, 2],  #base[3]的stride=1, base[4]的stride=2
-            [2, 64, 2, 1],  #base[5] 
+            [2, 64, 2, 1],  #base[5]
             [4, 64, 5, 1],
             [2, 64, 2, 2],
             [2, 64, 6, 2],

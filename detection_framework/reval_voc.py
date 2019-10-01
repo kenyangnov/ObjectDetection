@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Adapt from ->
 # --------------------------------------------------------
@@ -7,7 +7,7 @@
 # Licensed under The MIT License [see LICENSE for details]
 # Written by Ross Girshick
 # --------------------------------------------------------
-# <- Written by Yaping Sun
+# <- Written by kyn0v
 
 """Reval = re-eval. Re-evaluate saved detections."""
 
@@ -19,44 +19,35 @@ from voc_eval import voc_eval
 
 def parse_args():
     """
-    Parse input arguments
+    解析输入参数
     """
     parser = argparse.ArgumentParser(description='Re-evaluate results')
-    parser.add_argument('--output_dir', default='result_new/' ,help='results directory', 
-                        type=str)
-    parser.add_argument('--data_dir', dest='data_dir', default='/media/wl/000675B10007A33A/DatasetRepo/uavsummer/', type=str)
- 
-    parser.add_argument('--image_set', dest='image_set', default='uavindex', type=str)
-
+    parser.add_argument('net_version',type = str)
     args = parser.parse_args()
     return args
 
 
-def do_python_eval(data_path, image_set, det_file_path, classes, output_dir = 'result/',ovthresh=0.5):
-    annopath = os.path.join(
-        data_path,
-        'Annotations',
-        '{:s}.xml')
-    imagesetfile = os.path.join(
-        data_path,
-        image_set + '.txt')
-    cachedir = os.path.join('result')
-    aps = []
-    # The PASCAL VOC metric changed in 2010
+def do_python_eval(data_path, det_file_path, classes, output_dir, ovthresh):
+    anno_path = os.path.join( data_path, 'Annotations', '{:s}.xml')  #anno文件
+    test_file = os.path.join( data_path, 'test.txt')  #待检测的文件列表
+    cache_dir = os.path.join('result') #anno解析后的缓存地址
+    aps = []  #用于记录不同类别的ap
+    # 设置评估规则
     year = 2007
     use_07_metric = True if int(year) < 2010 else False
     print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
+    # 开始评估不同类别
     for i, cls in enumerate(classes):
         if cls == '__background__':
             continue
         rec, prec, ap = voc_eval(
-            det_file_path, annopath, imagesetfile, cls, cachedir, ovthresh,
+            det_file_path, anno_path, test_file, cls, cache_dir, ovthresh,
             use_07_metric=use_07_metric)
         aps += [ap]
-        #print(rec,prec,ap)
         print('AP for {} = {:.4f}'.format(cls, ap))
+        # 保存pr文件
         with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
             cPickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
     print('Mean AP = {:.4f}'.format(np.mean(aps)))
@@ -77,10 +68,16 @@ def do_python_eval(data_path, image_set, det_file_path, classes, output_dir = 'r
 
 if __name__ == '__main__':
     args = parse_args()
-
-    #类名列表
+    
+    net_version = args.net_version
+    # 检测结果与评估结果保存的目录
+    result_root = '/home/wl/Desktop/EXTD/result/'+ net_version
+    # 检测结果文件路径
+    det_file_path = os.path.join(result_root, 'result.txt')
+    # 数据集路径
+    dataset_path = '/media/wl/000675B10007A33A/DatasetRepo/uavsummer/'
+    # 待评估的类别
     classes = ['uav']
 
     print("开始检测")
-    det_file_path = '/home/wl/Desktop/EXTD/result_new/result.txt'
-    do_python_eval(args.data_dir, args.image_set,det_file_path, classes,ovthresh=0.1)
+    do_python_eval(dataset_path, det_file_path, classes, result_root,ovthresh=0.5)

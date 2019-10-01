@@ -100,11 +100,10 @@ def test_net(save_folder, net, dataset, thresh=0.5):
         # plt.imshow(img)
         # plt.show()
         h, w, _ = img.shape
-
         #设置输入测试图片的大小
         max_im_shrink = np.sqrt(1700 * 1200 / (img.shape[0] * img.shape[1]))
         image = cv2.resize(img, None, None, fx=max_im_shrink, fy=max_im_shrink, interpolation=cv2.INTER_LINEAR)
-        #image = cv2.resize(img,(1280,1280),interpolation=cv2.INTER_LINEAR)
+        #image = cv2.resize(img,(1920, 1024),interpolation=cv2.INTER_LINEAR)
         
         x = to_chw_bgr(image)
         x = x.astype('float32')
@@ -113,7 +112,7 @@ def test_net(save_folder, net, dataset, thresh=0.5):
         x = Variable(torch.from_numpy(x).unsqueeze(0))
         if use_cuda:
             x = x.cuda()
-        
+        print(x.size())
         # 检测时间
         _t['im_detect'].tic()
         with torch.no_grad():

@@ -80,41 +80,41 @@ class EXTD(nn.Module):
         for k in range(6):
             x = self.base[k](x)
             if k == 1:
-                before = nn.ReLU().cuda()((nn.MaxPool2d(2, stride = 2, ceil_mode=True).cuda()(x)))
+                before = F.interpolate(x, scale_factor=0.5)
         s1 = x
 
-        for k in range(2, 6):
-            if k == 2:
+        for k in range(1, 6):
+            if k == 1:
                 x += before
-                before = nn.ReLU().cuda()((nn.MaxPool2d(2, stride = 2, ceil_mode=True).cuda()(x)))
+                before = F.interpolate(x, scale_factor=0.5)
             x = self.base[k](x)
         s2 = x
 
-        for k in range(2, 6):
-            if k == 2:
+        for k in range(1, 6):
+            if k == 1:
                 x += before
-                before = nn.ReLU().cuda()((nn.MaxPool2d(2, stride = 2, ceil_mode=True).cuda()(x)))
+                before = F.interpolate(x, scale_factor=0.5)
             x = self.base[k](x)
         s3 = x
 
-        for k in range(2, 6):
-            if k == 2:
+        for k in range(1, 6):
+            if k == 1:
                 x += before
-                before = nn.ReLU().cuda()((nn.MaxPool2d(2, stride = 2, ceil_mode=True).cuda()(x)))
+                before = F.interpolate(x, scale_factor=0.5)
             x = self.base[k](x)
         s4 = x
 
-        for k in range(2, 6):
-            if k == 2:
+        for k in range(1, 6):
+            if k == 1:
                 x += before
-                before = nn.ReLU().cuda()((nn.MaxPool2d(2, stride = 2, ceil_mode=True).cuda()(x)))
+                before = F.interpolate(x, scale_factor=0.5)
             x = self.base[k](x)
         s5 = x
 
-        for k in range(2, 6):
-            if k == 2:
+        for k in range(1, 6):
+            if k == 1:
                 x += before
-                before = nn.MaxPool2d(2, stride = 2, ceil_mode=True).cuda()(x)
+                before = F.interpolate(x, scale_factor=0.5)
             x = self.base[k](x)
         s6 = x
 
@@ -322,4 +322,5 @@ if __name__ == '__main__':
     inputs = torch.randn(4, 3, 640, 640).cuda()
     output = net(inputs)
     #summary(net,(3,640,640))
+
 
