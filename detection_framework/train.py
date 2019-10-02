@@ -272,11 +272,16 @@ def val(epoch):
             'epoch': epoch,
             'weight': extd_net.state_dict(),
         }
-	#保存检查点
+	#保存检查点（覆盖）
         print('保存检查点,epoch',epoch)
         file = 'extd_{}_checkpoint.pth'.format(args.dataset)
-        torch.save(states, os.path.join(
-            save_folder, file))
+        torch.save(states, os.path.join(save_folder, file))
+
+        #每5个epoch保存一次（不覆盖）
+        if(epoch%5==0):
+            print('保存检查点,epoch',epoch)
+            file = 'epoch_{}.pth'.format(epoch)
+            torch.save(states, os.path.join(save_folder, file))
 
 
 def adjust_learning_rate(optimizer, gamma, step):
