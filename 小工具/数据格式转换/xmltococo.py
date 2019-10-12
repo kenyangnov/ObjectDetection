@@ -32,21 +32,21 @@ class PascalVOC2coco(object):
         self.save_json()
 
     def data_transfer(self):
-        for num, json_file in enumerate(self.xml):
+        for num, xml_file in enumerate(self.xml):
 
             # 进度输出
             sys.stdout.write('\r>> Converting image %d/%d' % (
                 num + 1, len(self.xml)))
             sys.stdout.flush()
 
-            self.json_file = json_file
+            self.xml_file = xml_file
             self.num = num
-            path = os.path.dirname(self.json_file)
+            path = os.path.dirname(self.xml_file)
             path = os.path.dirname(path)
-            # path=os.path.split(self.json_file)[0]
+            # path=os.path.split(self.xml_file)[0]
             # path=os.path.split(path)[0]
             obj_path = glob.glob(os.path.join(path, 'SegmentationObject', '*.png'))
-            with open(json_file, 'r') as fp:
+            with open(xml_file, 'r') as fp:
                 for p in fp:
                     # if 'folder' in p:
                     #     folder =p.split('>')[1].split('<')[0]
