@@ -168,10 +168,10 @@ class Net(nn.Module): #mobileNet v2
         last_channel = 256
         interverted_residual_setting = [
             # t, c, n, s    (隐层扩张倍数,输出通道数,重复次数,步长)
-            [1, 64, 1, 1],  # depthwise conv for first row
-            [2, 64, 2, 1],
-            [4, 64, 2, 2],  #base[3]的stride=1, base[4]的stride=2
-            [2, 64, 2, 1],  #base[5]
+            [1, 64, 1, 1],  # base[1]
+            [2, 64, 2, 1],  # base[2], base[3]
+            [4, 64, 2, 2],  #base[4]的stride=1, base[5]的stride=2
+            [2, 64, 2, 1], 
             [4, 64, 5, 1],
             [2, 64, 2, 2],
             [2, 64, 6, 2],
@@ -181,7 +181,7 @@ class Net(nn.Module): #mobileNet v2
         # 构建第一层
         input_channel = int(input_channel * width_mult) #64
         self.last_channel = int(last_channel * width_mult) if width_mult > 1.0 else last_channel    #256
-        self.features = [conv_bn(3, input_channel, 2)]  #[3,64,2]
+        self.features = [conv_bn(3, input_channel, 2)]  # base[0]     
         # 构建中间层IR块
         cnt = 0
         for t, c, n, s in interverted_residual_setting:
@@ -230,4 +230,4 @@ if __name__ == '__main__':
     print(net)
     #inputs = Variable(torch.randn(4, 3, 640, 640))
     #output = net(inputs)
-    summary(net,(3,640,640))
+    #summary(net,(3,640,640))

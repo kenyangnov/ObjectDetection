@@ -102,45 +102,50 @@ class EXTD(nn.Module):
 
         # apply vgg up to conv4_3 relu
         for k in range(6):
-            if(k==1):
+            if(k==4):
                 before = x
             x = self.base[k](x)
         s1 = x
 
         # apply vgg up to fc7
         for k in range(2, 6):
-            if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=2, padding=1).cuda()(before)
+            if(k==2):	#错了!
+                x += before
+                before = x #使用哪一轮的before?融合前几轮的特征图?
             x = self.base[k](x)
 
         s2 = x
 
         for k in range(2, 6):
-            if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=4, padding=1).cuda()(before)
+            if(k==4):
+                x += before
+                before = x
             x = self.base[k](x)
 
         s3 = x
 
         for k in range(2, 6):
-            if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=8, padding=1).cuda()(before)
+            if(k==4):
+                x += before
+                before = x
             x = self.base[k](x)
 
         s4 = x
 
 
         for k in range(2, 6):
-            if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=16, padding=1).cuda()(before)
+            if(k==4):
+                x += before
+                before = x
             x = self.base[k](x)
 
         s5 = x
 
 
         for k in range(2, 6):
-            if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=32, padding=1).cuda()(before)
+            if(k==4):
+                x += before
+                before = x
             x = self.base[k](x)
 
         s6 = x

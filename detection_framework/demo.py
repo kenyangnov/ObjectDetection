@@ -31,11 +31,10 @@ import matplotlib.pyplot as plt
 
 
 parser = argparse.ArgumentParser(description='EXTD demo')
-parser.add_argument('--save_dir', type=str, default='result_demo/',
+parser.add_argument('--save_dir', type=str, default='img_det/',
                     help='Directory for detect result')
-parser.add_argument('--model', type=str,
-                    default='weights/extd_voc.pth', help='trained model')
-parser.add_argument('--thresh', default=0.6, type=float,
+parser.add_argument('--model', type=str, help='trained model')
+parser.add_argument('--thresh', default=0.5, type=float,
                     help='Final confidence threshold')
 args = parser.parse_args()
 
@@ -88,7 +87,8 @@ def detect(net, img_path, thresh, wid, hei):
                               img.shape[1], img.shape[0]])
 
         img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-
+        plt.imshow(img)
+        plt.show()
         for i in range(detections.size(1)):
             j = 0
             while detections[0, i, j, 0] >= thresh:
@@ -181,24 +181,26 @@ def detect_video(net, img, thresh, wid, hei):
 
 if __name__ == '__main__':
     net = build_extd('test', cfg.NUM_CLASSES)
-    net.load_state_dict(torch.load(args.model))
+    net.load_state_dict(torch.load(args.model)['weight'])
     net.eval()
 
     if use_cuda:
         net.cuda()
         cudnn.benckmark = True
 
-    # img_path = './img'
-    # img_list = [os.path.join(img_path, x)
-    #             for x in os.listdir(img_path) if x.endswith('jpg')]
-    # for path in img_list:
-    #     dt = detect(net, path, args.thresh, -1, -1)
-    #     print(dt)
+    img_path = 'img/'
+    img_list = [os.path.join(img_path, x) for x in os.listdir(img_path) if x.endswith('jpg')]
+    for path in img_list:
+        dt = detect(net, path, args.thresh, -1, -1)
+        print(dt)
+    
+    '''
     video = cv2.VideoCapture("/home/wl/Desktop/2019_8_30/IMG_2539.mp4")
     flag =1
     while flag:
         flag, frame = video.read()
         detect_video(net, frame, args.thresh, -1, -1)
+    '''
 
     '''
     file = open('time_check.txt', 'w')

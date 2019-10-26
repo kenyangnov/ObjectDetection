@@ -272,8 +272,8 @@ def val(epoch):
             'epoch': epoch,
             'weight': extd_net.state_dict(),
         }
-	#保存检查点（覆盖）
-        print('保存检查点,epoch',epoch)
+	#保存检查点（states封装）
+        print('保存检查点extd_{}_checkpoint.pth'.format(args.dataset))
         file = 'extd_{}_checkpoint.pth'.format(args.dataset)
         torch.save(states, os.path.join(save_folder, file))
 

@@ -102,29 +102,32 @@ class EXTD(nn.Module):
 
         # apply vgg up to conv4_3 relu
         for k in range(6):
-            if(k==1):
-                before = x
+            if(k==2):
+                before = nn.Conv2d(64, 64, kernel_size=(3,3), stride=2, padding=1).cuda()(x)
             x = self.base[k](x)
         s1 = x
 
         # apply vgg up to fc7
         for k in range(2, 6):
             if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=2, padding=1).cuda()(before)
+                x += before
+                before = nn.Conv2d(64, 64, kernel_size=(3,3), stride=2, padding=1).cuda()(x) #使用哪一轮的before?
             x = self.base[k](x)
 
         s2 = x
 
         for k in range(2, 6):
             if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=4, padding=1).cuda()(before)
+                x += before
+                before = nn.Conv2d(64, 64, kernel_size=(3,3), stride=2, padding=1).cuda()(x)
             x = self.base[k](x)
 
         s3 = x
 
         for k in range(2, 6):
             if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=8, padding=1).cuda()(before)
+                x += before
+                before = nn.Conv2d(64, 64, kernel_size=(3,3), stride=2, padding=1).cuda()(x)
             x = self.base[k](x)
 
         s4 = x
@@ -132,7 +135,8 @@ class EXTD(nn.Module):
 
         for k in range(2, 6):
             if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=16, padding=1).cuda()(before)
+                x += before
+                before = nn.Conv2d(64, 64, kernel_size=(3,3), stride=2, padding=1).cuda()(x)
             x = self.base[k](x)
 
         s5 = x
@@ -140,7 +144,8 @@ class EXTD(nn.Module):
 
         for k in range(2, 6):
             if(k==2):
-                x += nn.Conv2d(64, 64, kernel_size=(3,3), stride=32, padding=1).cuda()(before)
+                x += before
+                before = nn.Conv2d(64, 64, kernel_size=(3,3), stride=2, padding=1).cuda()(x)
             x = self.base[k](x)
 
         s6 = x

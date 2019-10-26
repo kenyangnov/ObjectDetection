@@ -32,6 +32,7 @@ labelmap = ['uav']
 parser = argparse.ArgumentParser(
     description='EXTD face Detector Testing With Pytorch')
 parser.add_argument('net_version')
+parser.add_argument('weight_version')
 args = parser.parse_args()
 
 class Timer(object):
@@ -103,7 +104,8 @@ def test_net(save_folder, net, dataset, thresh=0.5):
         #设置输入测试图片的大小
         max_im_shrink = np.sqrt(1700 * 1200 / (img.shape[0] * img.shape[1]))
         image = cv2.resize(img, None, None, fx=max_im_shrink, fy=max_im_shrink, interpolation=cv2.INTER_LINEAR)
-        #image = cv2.resize(img,(1920, 1024),interpolation=cv2.INTER_LINEAR)
+        #image = cv2.resize(img,(640, 640),interpolation=cv2.INTER_LINEAR)
+        
         
         x = to_chw_bgr(image)
         x = x.astype('float32')
@@ -158,9 +160,10 @@ def test_net(save_folder, net, dataset, thresh=0.5):
 if __name__ == '__main__':
     #设置网络
     net = build_extd('test', cfg.NUM_CLASSES)
-    load_folder = "weights/"+args.net_version+"/extd_voc.pth"
+    #load_folder = os.path.join("weights", args.net_version, args.weight_version)
+    load_folder = args.weight_version
     print("从{}加载训练文件".format(load_folder))
-    net.load_state_dict(torch.load(load_folder))
+    net.load_state_dict(torch.load(load_folder)['weight'])
     net.eval()
     use_cuda = torch.cuda.is_available()
     if use_cuda:

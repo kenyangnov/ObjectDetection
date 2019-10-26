@@ -41,7 +41,7 @@ _C.filter_min_face = True
 #_C.LR_STEPS = (120, 198, 250)
 _C.MAX_STEPS = 480000
 _C.LR_STEPS = (240000, 360000)
-_C.EPOCHES = 600
+_C.EPOCHES = 160
 
 # anchor config
 _C.FEATURE_MAPS = [160, 80, 40, 20, 10, 5]
