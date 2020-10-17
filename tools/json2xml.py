@@ -1,3 +1,8 @@
+"""
+written by kynov.
+2020.08.01
+"""
+
 from __future__ import absolute_import
 import os
 import glob
@@ -5,9 +10,11 @@ import json
 import cv2
 import numpy as np
 
+# The mask to remove watermark and text
 rect_mask_1 = [0, 0, 230, 40]
 rect_mask_2 = [420, 0, 640, 40]
 rect_mask_3 = [10, 60, 240, 90]
+
 IR_mask = [rect_mask_1, rect_mask_2, rect_mask_3]
 
 rect_mask_4 = [7, 13, 248, 64]
@@ -26,11 +33,12 @@ rect_mask_16 = [570, 751, 771, 762]
 rect_mask_17 = [383, 537, 579, 544]
 rect_mask_18 = [572, 323, 582, 435]
 rect_mask_20 = [580, 321, 771, 329]
+rect_mask_21 = [0, 960, 190, 1080]
 RGB_mask = [
     rect_mask_4, rect_mask_5, rect_mask_6, rect_mask_7, rect_mask_8,
     rect_mask_9, rect_mask_10, rect_mask_11, rect_mask_12, rect_mask_13,
     rect_mask_14, rect_mask_15, rect_mask_16, rect_mask_17, rect_mask_18,
-    rect_mask_20
+    rect_mask_20, rect_mask_21
 ]
 
 
@@ -39,7 +47,7 @@ def onClickMouse(event, x, y, flags, param):
     global ix, iy
     if event == cv2.EVENT_LBUTTONDOWN:
         ix, iy = x, y
-    elif event == cv2.EVENT_MOUSEMOVE and flags == cv2.EVENT_FLAG_LBUTTON:
+    elif event == cv2.EVENT_MOUSEMOVE and flags == cv2.EVENT_FLAG_LBUTTON:  # 当按下左键拖拽鼠标时
         tmp = param.copy()
         cv2.rectangle(tmp, (ix, iy), (x, y), (0, 0, 255), 2)
         cv2.imshow("Coordinate of Rectangle", tmp)
@@ -48,7 +56,7 @@ def onClickMouse(event, x, y, flags, param):
         cv2.imshow("Coordinate of Rectangle", param)
         coordinate = "x1, y1, x2, y2: [ %s, %s, %s, %s ]" % (ix, iy, x, y)
         print(coordinate)
-    elif event == cv2.EVENT_MOUSEMOVE and flags != cv2.EVENT_FLAG_LBUTTON:
+    elif event == cv2.EVENT_MOUSEMOVE and flags != cv2.EVENT_FLAG_LBUTTON:  # 左键没有按下的情况下,鼠标移动 标出坐标
         temp_coordinate = str(x) + ', ' + str(y)
         tmp = param.copy()
         cv2.putText(tmp, temp_coordinate, (x, y), cv2.FONT_HERSHEY_COMPLEX,
@@ -83,9 +91,11 @@ def generateXML(anno_path, image_id, frame, bboxes):
     xml_file = open(os.path.join(anno_path, "%06d.xml" % image_id), 'w')
     xml_file.write('<annotation>\n')
     xml_file.write('    <folder>VOC2007</folder>\n')
-    xml_file.write('    <filename>' + ("%06d.jpg" % image_id) + '</filename>\n')
+    xml_file.write('    <filename>' + ("%06d.jpg" % image_id) +
+                   '</filename>\n')
     xml_file.write('    <source>\n')
-    xml_file.write('        <database>https://anti-uav.github.io/</database>\n')
+    xml_file.write(
+        '        <database>https://anti-uav.github.io/</database>\n')
     xml_file.write('        <annotation>VOC2007</annotation>\n')
     xml_file.write('    </source>\n')
     xml_file.write('    <size>\n')
@@ -173,7 +183,10 @@ def videoShowing(mode='IR'):
             ret, frame = capture.read()
             # cv2.imwrite("./%s.jpg"%mode, frame)
             # return
-            frame = inpaint(frame, IR_mask)
+            if mode == 'RGB':
+                frame = inpaint(frame, RGB_mask)
+            else:
+                frame = inpaint(frame, IR_mask)
             if not ret:
                 capture.release()
                 break
@@ -194,5 +207,5 @@ def videoShowing(mode='IR'):
 
 if __name__ == '__main__':
     # videoShowing(mode='IR')
-    # getCoordinate("./IR.jpg"
-    generateVOC('IR')  # or 'RGB'
+    # getCoordinate("./RGB.jpg")
+    generateVOC('RGB')  # or 'IR'
