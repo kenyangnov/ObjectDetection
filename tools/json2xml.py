@@ -77,7 +77,8 @@ def getCoordinate(img_path):
 # Overlapping two pictures
 def overlap(img_bg_path, img_fg_path):
     bottom = cv2.imread(img_bg_path)
-    top = cv2.resize(cv2.imread(img_fg_path), (bottom.shape[1], bottom.shape[0]))
+    top = cv2.resize(cv2.imread(img_fg_path),
+                     (bottom.shape[1], bottom.shape[0]))
     overlapping = cv2.addWeighted(bottom, 0.8, top, 0.2, 0)
     cv2.namedWindow("Coordinate of Rectangle")
     cv2.imshow("Coordinate of Rectangle", overlapping)
@@ -239,8 +240,8 @@ def videoOverlapShowing():
     # infrared image fast forward
     for i in range(3):
         ret_IR, frame_IR = capture_IR.read()
-        frame_id_IR = frame_id_IR+1
-    
+        frame_id_IR = frame_id_IR + 1
+
     while True:
         ret_IR, frame_IR = capture_IR.read()
         frame_IR = inpaint(frame_IR, IR_mask)
@@ -254,26 +255,34 @@ def videoOverlapShowing():
         _exist_IR = label_gt_IR['exist'][frame_id_IR]
         _gt_RGB = label_gt_RGB['gt_rect'][frame_id_RGB]
         _exist_RGB = label_gt_RGB['exist'][frame_id_RGB]
-        if (_exist_IR and _gt_RGB):
-            cv2.rectangle(frame_IR, (int(_gt_IR[0]), int(_gt_IR[1])),
-                            (int(_gt_IR[0] + _gt_IR[2]), int(_gt_IR[1] + _gt_IR[3])),
-                            (0, 255, 0))
-            cv2.putText(frame_IR, 'exist' if _exist_IR else 'not exist',
-                        (frame_IR.shape[1] // 2 - 20, 30), 1, 2,
-                        (0, 255, 0) if _exist_IR else (0, 0, 255), 2)
-            cv2.rectangle(frame_RGB, (int(_gt_RGB[0]), int(_gt_RGB[1])),
-                            (int(_gt_RGB[0] + _gt_RGB[2]), int(_gt_RGB[1] + _gt_RGB[3])),
-                            (0, 255, 0))
-            cv2.putText(frame_RGB, 'exist' if _exist_RGB else 'not exist',
-                        (frame_RGB.shape[1] // 2 - 20, 30), 1, 2,
-                        (0, 255, 0) if _exist_RGB else (0, 0, 255), 2)
-        overlapping = cv2.addWeighted(frame_RGB, 0.8, cv2.resize(frame_IR, (frame_RGB.shape[1], frame_RGB.shape[0])), 0.2, 0)
+        if (_exist_IR):
+            cv2.rectangle(
+                frame_IR, (int(_gt_IR[0]), int(_gt_IR[1])),
+                (int(_gt_IR[0] + _gt_IR[2]), int(_gt_IR[1] + _gt_IR[3])),
+                (0, 255, 0))
+        if (_exist_RGB):
+            cv2.rectangle(
+                frame_RGB, (int(_gt_RGB[0]), int(_gt_RGB[1])),
+                (int(_gt_RGB[0] + _gt_RGB[2]), int(_gt_RGB[1] + _gt_RGB[3])),
+                (0, 255, 0))
+
+        cv2.putText(frame_IR, 'exist' if _exist_IR else 'not exist',
+                    (frame_IR.shape[1] // 2 - 20, 30), 1, 2,
+                    (0, 255, 0) if _exist_IR else (0, 0, 255), 2)
+        cv2.putText(frame_RGB, 'exist' if _exist_RGB else 'not exist',
+                    (frame_RGB.shape[1] // 2 - 20, 30), 1, 2,
+                    (0, 255, 0) if _exist_RGB else (0, 0, 255), 2)
+        overlapping = cv2.addWeighted(
+            frame_RGB, 0.5,
+            cv2.resize(frame_IR, (frame_RGB.shape[1], frame_RGB.shape[0])),
+            0.5, 0)
         cv2.imshow(video_name, overlapping)
         cv2.waitKey(100)
         frame_id_IR += 1
         frame_id_RGB += 1
 
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     # videoShowing(mode='IR')
