@@ -132,15 +132,31 @@ def xml2coco(xmlFiles, jsonFile):
     json_fp.close()
 
 
+def convertImageSize(imagePath, width=640, height=640):
+    saveDir = str(width) + "x" + str(height)
+    if not os.path.exists(saveDir):
+        os.makedirs(os.path.join(saveDir))
+    for imageFileName in imagePath:
+        imageName = os.path.basename(imageFileName)
+        img = cv2.imread(imageFileName)
+        try:
+            img_temp = cv2.resize(img, (width, height))
+            cv2.imwrite(os.path.join(saveDir, imageName), img_temp)
+        except Exception as e:
+            print(e)
+
+
 if __name__ == '__main__':
-    os.chdir("./Desktop/bird/bird/")
+    os.chdir("~/Desktop/bird")
 
-    xmlFiles = glob.glob('./Annotations/*.xml')
-    sizeRange = [4000, 100000]
-    selectObjectBySize(sizeRange, xmlFiles)
+    imgFiles = glob.glob('./JPEGImages/*.jpg')
+    convertImageSize(imgFiles)
+    # xmlFiles = glob.glob('./Annotations/*.xml')
+    # sizeRange = [4000, 100000]
+    # selectObjectBySize(sizeRange, xmlFiles)
 
-    #jsonFile = sys.argv[1]
-    #xml2coco(xmlFiles)
+    # jsonFile = sys.argv[1]
+    # xml2coco(xmlFiles)
 
-    #xmlFilePath = "./4000to20000/Annotations/000103.xml"
-    #showBBox(xmlFilePath)
+    # xmlFilePath = "./4000to20000/Annotations/000103.xml"
+    # showBBox(xmlFilePath)
