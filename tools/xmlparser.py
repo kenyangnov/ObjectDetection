@@ -10,6 +10,7 @@ import json
 import shutil
 import cv2
 import imghdr
+from shutil import copyfile
 
 
 def changeFileNameInAnnotation(xmlFiles):
@@ -21,11 +22,13 @@ def changeFileNameInAnnotation(xmlFiles):
         fileName.text = imgName
         tree.write(filePath)
 
+
 def showBBox(xmlFilePath):
     tree = ET.parse(xmlFilePath)
     root = tree.getroot()
     fileName = root.find('filename').text
-    imagePath = xmlFilePath.replace("Annotations", "JPEGImages").replace(".xml", ".jpg")
+    imagePath = xmlFilePath.replace("Annotations",
+                                    "JPEGImages").replace(".xml", ".jpg")
     image = cv2.imread(imagePath)
     for objectInfo in root.findall('object'):
         bbox = objectInfo.find('bndbox')
@@ -33,9 +36,10 @@ def showBBox(xmlFilePath):
         ymin = int(bbox.find('ymin').text)
         xmax = int(bbox.find('xmax').text)
         ymax = int(bbox.find('ymax').text)
-        cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0,255,0), 2)
+        cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
     cv2.imshow("bbox", image)
     cv2.waitKey(100000)
+
 
 def analyzeObjectSize(xmlFiles):
     sizeCount = []
@@ -77,15 +81,23 @@ def selectObjectBySize(sizeRange, xmlFiles):
                     os.makedirs(os.path.join(dstDir, "Annotations"))
                     os.makedirs(os.path.join(dstDir, "JPEGImages"))
                 xmlFileName = filePath.split("\\")[-1][:-4] + ".xml"
-                shutil.copyfile(filePath, os.path.join(dstDir,"Annotations", xmlFileName))
-                shutil.copyfile(os.path.join("./JPEGImages", imageFileName), os.path.join(dstDir, "JPEGImages", imageFileName))
+                shutil.copyfile(
+                    filePath, os.path.join(dstDir, "Annotations", xmlFileName))
+                shutil.copyfile(
+                    os.path.join("./JPEGImages", imageFileName),
+                    os.path.join(dstDir, "JPEGImages", imageFileName))
                 break
+
 
 def xml2coco(xmlFiles, jsonFile):
     categories = {"uav": 1, "bird": 2}
     bndId = 1
-    jsonDict = {"images": [], "type": "instances",
-                "annotations": [], "categories": []}
+    jsonDict = {
+        "images": [],
+        "type": "instances",
+        "annotations": [],
+        "categories": []
+    }
     for filePath in tqdm(xmlFiles):
         tree = ET.parse(filePath)
         root = tree.getroot()
@@ -94,8 +106,12 @@ def xml2coco(xmlFiles, jsonFile):
         size = root.find('size')
         width = int(size.find('width').text)
         height = int(size.find('height').text)
-        image = {'file_name': fileName, 'height': height,
-                 'width': width, 'id': imageId}
+        image = {
+            'file_name': fileName,
+            'height': height,
+            'width': width,
+            'id': imageId
+        }
         jsonDict['images'].append(image)
         for objectInfo in root.findall('object'):
             category = objectInfo.find('name').text
@@ -108,18 +124,20 @@ def xml2coco(xmlFiles, jsonFile):
             ymin = int(bbox.find('ymin').text) - 1
             xmax = int(bbox.find('xmax').text)
             ymax = int(bbox.find('ymax').text)
-            assert(xmax > xmin)
-            assert(ymax > ymin)
+            assert (xmax > xmin)
+            assert (ymax > ymin)
             objectWidth = abs(xmax - xmin)
             objectHeight = abs(ymax - ymin)
-            annotation = {'area': objectWidth*objectHeight,
-                          'iscrowd': 0,
-                          'image_id': imageId,
-                          'bbox': [xmin, ymin, objectWidth, objectHeight],
-                          'category_id': categoryId,
-                          'id': bndId,
-                          'ignore': 0,
-                          'segmentation': []}
+            annotation = {
+                'area': objectWidth * objectHeight,
+                'iscrowd': 0,
+                'image_id': imageId,
+                'bbox': [xmin, ymin, objectWidth, objectHeight],
+                'category_id': categoryId,
+                'id': bndId,
+                'ignore': 0,
+                'segmentation': []
+            }
             jsonDict['annotations'].append(annotation)
             bndId = bndId + 1
     for category, categoryId in categories.items():
@@ -136,7 +154,7 @@ def convertImageSize(imagePath, width=640, height=640):
     saveDir = str(width) + "x" + str(height)
     if not os.path.exists(saveDir):
         os.makedirs(os.path.join(saveDir))
-    for imageFileName in imagePath:
+    for imageFileName in tqdm(imagePath):
         imageName = os.path.basename(imageFileName)
         img = cv2.imread(imageFileName)
         try:
@@ -146,13 +164,45 @@ def convertImageSize(imagePath, width=640, height=640):
             print(e)
 
 
-if __name__ == '__main__':
-    os.chdir("~/Desktop/bird")
+def renameAllFiles(startIdx,
+                   srcAnno="./Annotations/",
+                   srcJpeg="./JPEGImages/",
+                   dstAnno="./DstAnnotations/",
+                   dstJpeg="./DstJPEGImages/",
+                   mode='copy'):
+    annoList = os.listdir(srcAnno)
+    picList = os.listdir(srcJpeg)
+    if not os.path.exists(dstAnno):
+        os.makedirs(os.path.join(dstAnno))
+    if not os.path.exists(dstJpeg):
+        os.makedirs(os.path.join(dstJpeg))
+    cnt = startIdx  # 设置文件名计数起点
+    for anno in tqdm(annoList):
+        pic = anno[:-4] + '.jpg'
+        if pic in picList:
+            if mode == 'copy':
+                os.rename(srcAnno + anno,
+                          (dstAnno + str(cnt).zfill(6) + '.xml'))
+                os.rename(srcJpeg + pic,
+                          (dstJpeg + str(cnt).zfill(6) + '.jpg'))
+            elif mode == 'cut':
+                copyfile(srcAnno + anno,
+                         (dstAnno + str(cnt).zfill(6) + '.xml'))
+                copyfile(srcJpeg + pic, (dstJpeg + str(cnt).zfill(6) + '.jpg'))
+            else:
+                print("Unknown mode!")
+                break
+            cnt += 1
 
-    imgFiles = glob.glob('./JPEGImages/*.jpg')
-    convertImageSize(imgFiles)
+
+if __name__ == '__main__':
+    os.chdir("C:/Users/M/Desktop/bird")
+    renameAllFiles(90000)
+    # imgFiles = glob.glob('./JPEGImages/*.jpg')
+    # convertImageSize(imgFiles)
+
     # xmlFiles = glob.glob('./Annotations/*.xml')
-    # sizeRange = [4000, 100000]
+    # sizeRange = [1, 100000]
     # selectObjectBySize(sizeRange, xmlFiles)
 
     # jsonFile = sys.argv[1]
