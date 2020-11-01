@@ -195,9 +195,26 @@ def renameAllFiles(startIdx,
             cnt += 1
 
 
+def changeLabel(xmlFiles, oriLabel, newLabel):
+    for filePath in tqdm(xmlFiles):
+        imageFileName = filePath.split("\\")[-1][:-4] + ".jpg"
+        if not imghdr.what(os.path.join("./JPEGImages", imageFileName)):
+            continue
+        tree = ET.parse(filePath)
+        root = tree.getroot()
+        for objectInfo in root.findall('object'):
+            className = objectInfo.find('name').text
+            if className == oriLabel:
+                objectInfo.find('name').text = newLabel
+        tree.write(filePath)
+
+
 if __name__ == '__main__':
-    os.chdir("C:/Users/M/Desktop/bird")
-    renameAllFiles(90000)
+    os.chdir("C:/Users/M/Desktop/fixedwing")
+
+    # xmlFiles = glob.glob('./Annotations/*.xml')
+    # changeLabel(xmlFiles, 'uav', 'fixedwing')
+
     # imgFiles = glob.glob('./JPEGImages/*.jpg')
     # convertImageSize(imgFiles)
 
