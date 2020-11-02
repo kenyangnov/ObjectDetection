@@ -1,4 +1,6 @@
 # xml annotation parser and processing
+# created by kynov
+
 import os
 import sys
 import glob
@@ -13,6 +15,7 @@ import imghdr
 from shutil import copyfile
 
 
+# 批量修改xml文件中的filename
 def changeFileNameInAnnotation(xmlFiles):
     for filePath in tqdm(xmlFiles):
         imgName = filePath.split("\\")[-1][:-4] + ".jpg"
@@ -23,6 +26,7 @@ def changeFileNameInAnnotation(xmlFiles):
         tree.write(filePath)
 
 
+# 可视化bbox
 def showBBox(xmlFilePath):
     tree = ET.parse(xmlFilePath)
     root = tree.getroot()
@@ -41,6 +45,7 @@ def showBBox(xmlFilePath):
     cv2.waitKey(100000)
 
 
+# 分析目标尺寸分布
 def analyzeObjectSize(xmlFiles):
     sizeCount = []
     for filePath in tqdm(xmlFiles):
@@ -61,6 +66,7 @@ def analyzeObjectSize(xmlFiles):
     plt.show()
 
 
+# 选取指定尺寸范围内的数据
 def selectObjectBySize(sizeRange, xmlFiles):
     for filePath in tqdm(xmlFiles):
         imageFileName = filePath.split("\\")[-1][:-4] + ".jpg"
@@ -89,6 +95,7 @@ def selectObjectBySize(sizeRange, xmlFiles):
                 break
 
 
+# xml to coco
 def xml2coco(xmlFiles, jsonFile):
     categories = {"uav": 1, "bird": 2}
     bndId = 1
@@ -150,6 +157,7 @@ def xml2coco(xmlFiles, jsonFile):
     json_fp.close()
 
 
+# 批量修改图片尺寸
 def convertImageSize(imagePath, width=640, height=640):
     saveDir = str(width) + "x" + str(height)
     if not os.path.exists(saveDir):
@@ -164,6 +172,7 @@ def convertImageSize(imagePath, width=640, height=640):
             print(e)
 
 
+# 批量重命名
 def renameAllFiles(startIdx,
                    srcAnno="./Annotations/",
                    srcJpeg="./JPEGImages/",
@@ -195,6 +204,7 @@ def renameAllFiles(startIdx,
             cnt += 1
 
 
+# 批量重命名label
 def changeLabel(xmlFiles, oriLabel, newLabel):
     for filePath in tqdm(xmlFiles):
         imageFileName = filePath.split("\\")[-1][:-4] + ".jpg"
