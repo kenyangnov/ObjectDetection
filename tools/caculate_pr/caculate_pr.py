@@ -3,6 +3,7 @@ import pickle as cPickle
 import numpy as np
 import xml.etree.ElementTree as ET
 
+
 def parse_rec(filename):
     """ Parse a PASCAL VOC xml file """
     tree = ET.parse(filename)
@@ -10,16 +11,19 @@ def parse_rec(filename):
     for obj in tree.findall('object'):
         obj_struct = {}
         obj_struct['name'] = obj.find('name').text
-        #obj_struct['pose'] = obj.find('pose').text
-        #obj_struct['truncated'] = int(obj.find('truncated').text)
+        # obj_struct['pose'] = obj.find('pose').text
+        # obj_struct['truncated'] = int(obj.find('truncated').text)
         obj_struct['difficult'] = int(obj.find('difficult').text)
         bbox = obj.find('bndbox')
-        obj_struct['bbox'] = [int(bbox.find('xmin').text),
-                              int(bbox.find('ymin').text),
-                              int(bbox.find('xmax').text),
-                              int(bbox.find('ymax').text)]
+        obj_struct['bbox'] = [
+            int(bbox.find('xmin').text),
+            int(bbox.find('ymin').text),
+            int(bbox.find('xmax').text),
+            int(bbox.find('ymax').text)
+        ]
         objects.append(obj_struct)
     return objects
+
 
 def voc_ap(rec, prec, use_07_metric, classname):
     """
@@ -39,12 +43,14 @@ def voc_ap(rec, prec, use_07_metric, classname):
     pr_value_dir = "./pr/"
     if not os.path.isdir(pr_value_dir):
         os.mkdir(pr_value_dir)
-    with open(os.path.join(pr_value_dir, "{:s}_pr_value.txt".format(classname)), 'w') as f:
+    with open(
+            os.path.join(pr_value_dir, "{:s}_pr_value.txt".format(classname)),
+            'w') as f:
         for data in recall:
-            f.write(str(data)+'\n')
+            f.write(str(data) + '\n')
         f.write('\n')
         for data in precision:
-            f.write(str(data)+'\n')
+            f.write(str(data) + '\n')
 
     if use_07_metric:
         # 11 point metric
@@ -73,7 +79,9 @@ def voc_ap(rec, prec, use_07_metric, classname):
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
 
-def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh, confthresh, use_07_metric):
+
+def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh,
+             confthresh, use_07_metric):
     """
     detpath: Path to detections
         detpath.format(classname) should produce the detection results file.
@@ -104,11 +112,14 @@ def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh, con
         # load annotations(.xml)
         recs = {}
         for i, imagename in enumerate(imagenames):
-            recs[imagename] = parse_rec(os.path.join(annopath, '{:s}.xml'.format(imagename)))
+            recs[imagename] = parse_rec(
+                os.path.join(annopath, '{:s}.xml'.format(imagename)))
             if i % 100 == 0:
-                print('Reading annotation for {:d}/{:d}'.format(i + 1, len(imagenames)))
+                print('Reading annotation for {:d}/{:d}'.format(
+                    i + 1, len(imagenames)))
         # save(.pkl)
-        print('convert .xml files to .pkl file as cache, and save it to {:s}'.format(cachefile))
+        print('convert .xml files to .pkl file as cache, and save it to {:s}'.
+              format(cachefile))
         with open(cachefile, 'wb') as f:
             cPickle.dump(recs, f)
     else:
@@ -125,9 +136,11 @@ def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh, con
         difficult = np.array([x['difficult'] for x in R]).astype(np.bool)
         det = [False] * len(R)
         npos = npos + sum(~difficult)
-        class_recs[imagename] = {'bbox': bbox,
-                                 'difficult': difficult,
-                                 'det': det}
+        class_recs[imagename] = {
+            'bbox': bbox,
+            'difficult': difficult,
+            'det': det
+        }
 
     # read dets
     detfile = os.path.join(detpath, "{:s}_result.txt".format(classname))
@@ -136,7 +149,9 @@ def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh, con
 
     splitlines = [x.strip().split(' ') for x in lines]
     # filter our the detection result whose conf is below threshold
-    lines_over_conf_thresh = [x for x in splitlines if float(x[1]) > confthresh]
+    lines_over_conf_thresh = [
+        x for x in splitlines if float(x[1]) > confthresh
+    ]
     image_ids = [x[0] for x in lines_over_conf_thresh]
     confidence = np.array([float(x[1]) for x in lines_over_conf_thresh])
     BB = np.array([[float(z) for z in x[2:]] for x in lines_over_conf_thresh])
@@ -198,12 +213,14 @@ def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh, con
 
     return rec, prec, ap
 
-def do_python_eval(data_path, result_path, classes, ovthresh, confthresh, use_07_metric):
+
+def do_python_eval(data_path, result_path, classes, ovthresh, confthresh,
+                   use_07_metric):
     # GT file path
     xml_path = os.path.join(data_path, 'Annotations')  # xml文件(GT)
-    imageset_file = os.path.join( data_path, 'test.txt')  # 测试集图片名列表文件
-    cache_dir = data_path # GT对应的pkl文件的缓存路径
-    # DT file path: including {classname}_result.txt files in specific format as shown below 
+    imageset_file = os.path.join(data_path, 'test.txt')  # 测试集图片名列表文件
+    cache_dir = data_path  # GT对应的pkl文件的缓存路径
+    # DT file path: including {classname}_result.txt files in specific format as shown below
     # [imagename(without suffixes), confidence, x1, y1, x2, y2]
     det_file_path = result_path
     # Output pr_file path
@@ -215,7 +232,14 @@ def do_python_eval(data_path, result_path, classes, ovthresh, confthresh, use_07
     for _, cls in enumerate(classes):
         if cls == '__background__':
             continue
-        rec, prec, ap = voc_eval(det_file_path, xml_path, imageset_file, cls, cache_dir, ovthresh, confthresh, use_07_metric=use_07_metric)
+        rec, prec, ap = voc_eval(det_file_path,
+                                 xml_path,
+                                 imageset_file,
+                                 cls,
+                                 cache_dir,
+                                 ovthresh,
+                                 confthresh,
+                                 use_07_metric=use_07_metric)
         aps += [ap]
         print('AP for {} = {:.4f}'.format(cls, ap))
         # save pr.pkl file
@@ -229,7 +253,14 @@ if __name__ == '__main__':
 
     result_path = './result/'
 
-    classes = ['uav', ]
+    classes = [
+        'uav',
+    ]
 
     print("Start evaluation:")
-    do_python_eval(dataset_path, result_path, classes, ovthresh=0.5, confthresh=0.01, use_07_metric=False)
+    do_python_eval(dataset_path,
+                   result_path,
+                   classes,
+                   ovthresh=0.5,
+                   confthresh=0.01,
+                   use_07_metric=False)
