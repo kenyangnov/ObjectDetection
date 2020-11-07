@@ -191,15 +191,15 @@ def renameAllFiles(startIdx,
         pic = anno[:-4] + '.jpg'
         if pic in picList:
             if mode == 'copy':
-                os.rename(srcAnno + anno, (dstAnno + filenamePrefix + '_' +
-                                           str(cnt).zfill(6) + '.xml'))
-                os.rename(srcJpeg + pic, (dstJpeg + filenamePrefix + '_' +
-                                          str(cnt).zfill(6) + '.jpg'))
-            elif mode == 'cut':
                 copyfile(srcAnno + anno, (dstAnno + filenamePrefix + '_' +
                                           str(cnt).zfill(6) + '.xml'))
                 copyfile(srcJpeg + pic, (dstJpeg + filenamePrefix + '_' +
                                          str(cnt).zfill(6) + '.jpg'))
+            elif mode == 'cut':
+                os.rename(srcAnno + anno, (dstAnno + filenamePrefix + '_' +
+                                           str(cnt).zfill(6) + '.xml'))
+                os.rename(srcJpeg + pic, (dstJpeg + filenamePrefix + '_' +
+                                          str(cnt).zfill(6) + '.jpg'))
             else:
                 print("Unknown mode!")
                 break
