@@ -210,7 +210,7 @@ def renameAllFiles(startIdx,
 def changeLabel(xmlFiles, oriLabel, newLabel):
     for filePath in tqdm(xmlFiles):
         imageFileName = filePath.split("\\")[-1][:-4] + ".jpg"
-        if not imghdr.what(os.path.join("./JPEGImages", imageFileName)):
+        if not os.path.exists(os.path.join("./JPEGImages", imageFileName)):
             continue
         tree = ET.parse(filePath)
         root = tree.getroot()
