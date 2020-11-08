@@ -13,6 +13,7 @@ import shutil
 import cv2
 import imghdr
 from shutil import copyfile
+import random
 
 
 # 批量修改xml文件中的filename
@@ -221,11 +222,51 @@ def changeLabel(xmlFiles, oriLabel, newLabel):
         tree.write(filePath)
 
 
-if __name__ == '__main__':
-    os.chdir("C:/Users/M/Desktop/fixedwing")
+# 划分训练集/验证集/测试集
+def divideDataset(xmlFiles,
+                  MainPath='./ImageSets/Main',
+                  trainval_percent=0.9,
+                  train_percent=0.9):
+    trainvalPath = os.path.join(MainPath, 'trainval.txt')
+    trainPath = os.path.join(MainPath, 'train.txt')
+    testPath = os.path.join(MainPath, 'test.txt')
+    valPath = os.path.join(MainPath, 'val.txt')
+    if not os.path.exists(MainPath):
+        os.makedirs(os.path.join(MainPath))
+    cnt = len(xmlFiles)
+    list = range(cnt)
+    tv = int(cnt * trainval_percent)
+    tr = int(tv * train_percent)
+    trainval = random.sample(list, tv)
+    train = random.sample(trainval, tr)
 
+    ftrainval = open(trainvalPath, 'w')
+    ftest = open(trainPath, 'w')
+    ftrain = open(testPath, 'w')
+    fval = open(valPath, 'w')
+    for i in list:
+        xmlFileBaseName = os.path.basename(xmlFiles[i])[:-4] + '\n'
+        if i in trainval:
+            ftrainval.write(xmlFileBaseName)
+            if i in train:
+                ftrain.write(xmlFileBaseName)
+            else:
+                fval.write(xmlFileBaseName)
+        else:
+            ftest.write(xmlFileBaseName)
+    ftrainval.close()
+    ftrain.close()
+    fval.close()
+    ftest.close()
+
+
+if __name__ == '__main__':
+    os.chdir("C:/Users/kyno/Dataset")
     xmlFiles = glob.glob('./Annotations/*.xml')
-    renameAllFiles(1, "fixedwing")
+
+    # renameAllFiles(1, 'uav')
+
+    # divideDataset(xmlFiles)
 
     # changeLabel(xmlFiles, 'fixwing', 'fixedwing')
 
