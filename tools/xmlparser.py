@@ -260,9 +260,50 @@ def divideDataset(xmlFiles,
     ftest.close()
 
 
+def isValidJPG(jpgFile):
+    with open(jpgFile, 'rb') as f:
+        f.seek(-2, 2)
+        buf = f.read()
+        return buf == b'\xff\xd9'
+
+
+def isValidPNG(pngFile):
+    with open(pngFile, 'rb') as f:
+        f.seek(-3, 2)
+        buf = f.read()
+        if buf == b'\x60\x82\x00':
+            return True
+        elif buf[1:] == b'\x60\x82':
+            return True
+        else:
+            return False
+
+
+# 检查图片是否损坏
+def checkImages(imgFiles, checkType='jpg'):
+    f = open('check_error.txt', 'w+')
+    for fileName in tqdm(imgFiles):
+        # 注释的部分无法有效检测损坏图像
+        # fileType = imghdr.what(fileName)
+        # print(fileType == checkType)
+        # if fileType != checkType:
+        #     f.write(fileName)
+        #     f.write('\n')
+        if (checkType == 'jpg' or checkType == 'jpeg'):
+            if not isValidJPG(fileName):
+                f.write(fileName)
+                f.write('\n')
+        elif checkType == 'png':
+            if not isValidPNG(fileName):
+                f.write(fileName)
+                f.write('\n')
+    f.close()
+
+
 if __name__ == '__main__':
-    os.chdir("C:/Users/kyno/Dataset")
+    os.chdir("C:/Users/M/Desktop/fixedwing")
     xmlFiles = glob.glob('./Annotations/*.xml')
+    imgFiles = glob.glob('./JPEGImages/*.jpg')
 
     # renameAllFiles(1, 'uav')
 
@@ -270,7 +311,7 @@ if __name__ == '__main__':
 
     # changeLabel(xmlFiles, 'fixwing', 'fixedwing')
 
-    # imgFiles = glob.glob('./JPEGImages/*.jpg')
+    # checkImages(imgFiles)
     # convertImageSize(imgFiles)
 
     # xmlFiles = glob.glob('./Annotations/*.xml')
