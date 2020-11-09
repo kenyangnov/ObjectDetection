@@ -173,7 +173,7 @@ def convertImageSize(imagePath, width=640, height=640):
             print(e)
 
 
-# 批量重命名
+# 批量重命名（可能图像损坏的bug）
 def renameAllFiles(startIdx,
                    filenamePrefix,
                    srcAnno="./Annotations/",
